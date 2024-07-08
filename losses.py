@@ -58,6 +58,9 @@ class LRIZZLoss(nn.Module):
         """
         
         # Expect predictions['prediction'] to be of shape [B, 2, H, W]
+        """ 
+            targets: "[0,40,146,1,300,215,0];[0,305,206,0,165,13,-1];[1,345,39,1,416,66,0]"
+        """
         B = predictions['prediction'].shape[0]
         pa = torch.stack([predictions['prediction'][b,targets[b,:,0],targets[b,:,2],targets[b,:,1]] for b in range(B)], dim=0)
         pb = torch.stack([predictions['prediction'][b,targets[b,:,3],targets[b,:,5],targets[b,:,4]] for b in range(B)], dim=0)
