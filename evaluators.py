@@ -27,7 +27,7 @@ class BasicEvaluator(Evaluator):
         """
         super().__init__(dataloader, metrics)
     
-    def validate(self, network, device):
+    def validate(self, network, device, return_pred=False):
         """ Performs evaluation
         
         :param network: network to use
@@ -41,7 +41,7 @@ class BasicEvaluator(Evaluator):
         network.to(device)
         network.eval()
         # Iterate through dataset and evaluate
-        re_predictions = []
+        re_predictions = None
         with torch.no_grad():
             for item in tqdm.tqdm(self._dataloader):
                 B = item[0].shape[0]
@@ -59,7 +59,12 @@ class BasicEvaluator(Evaluator):
                 # print (output['prediction'].size())
                 # input()   
                 
-                re_predictions.append(output['prediction'].cpu()) 
+                tmp = np.array(output['prediction'].cpu())
+                if re_predictions is None:
+                    re_predictions = tmp
+                else:
+                    re_predictions = np.vstack([re_predictions, tmp]) 
+                
                 
                 predictions = output['prediction'].unflatten(0, (B,2))
                 
@@ -67,5 +72,8 @@ class BasicEvaluator(Evaluator):
                     # Calculate metric--this updates the metric object
                     result = self._metrics[k](predictions, label)
         
-        re_predictions = np.array(re_predictions)
-        return {k: self._metrics[k].compute().cpu().item() for k in self._metrics.keys()}, re_predictions
+        # re_predictions = np.array(re_predictions)
+        if return_pred:
+            return {k: self._metrics[k].compute().cpu().item() for k in self._metrics.keys()}, re_predictions
+        else:
+            return {k: self._metrics[k].compute().cpu().item() for k in self._metrics.keys()}

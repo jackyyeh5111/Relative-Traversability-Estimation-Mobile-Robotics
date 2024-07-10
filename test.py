@@ -80,6 +80,9 @@ def main(args_dict):
     network = get_network(**network_config)
     network.load_state_dict(torch.load(experiment.model_file))
     
+    print ("----- network -----")
+    print (network)
+    
     # Results
     test_results = {}
     
@@ -103,7 +106,7 @@ def main(args_dict):
     )
     logging.info("Running evaluation on train dataset")
     train_evaluator = BasicEvaluator(train_dataloader, eval_metrics)
-    test_results['train'] = train_evaluator.validate(network, device)
+    test_results['train'] = train_evaluator.validate(network, device, return_pred=False)
 
     # Compute results on validation set (if provided)
     if settings['valid_folder_path'] and settings['valid_csv_path']:
@@ -126,8 +129,14 @@ def main(args_dict):
         
         logging.info("Running evaluation on validation dataset")
         validation_evaluator = BasicEvaluator(valid_dataloader, eval_metrics)
-        test_results['validation'] = validation_evaluator.validate(network, device)
+        test_results['validation'], val_predictions = validation_evaluator.validate(network, device, return_pred=True)
     
+    
+    if args_dict['output_val_npy']:
+        print ('val_predictions.shape:', val_predictions.shape)
+        out_path = '/home/meng2024/jackyyeh/W-RIZZ/val_predictions.npy'
+        np.save(out_path, val_predictions)
+        
     # Print and save results
     logging.info(test_results)
     if args_dict['output']:
@@ -145,6 +154,9 @@ if __name__ == "__main__":
     parser.add_argument("--experiment", type=str)
     # Where to save output
     parser.add_argument("--output", type=str)
+    
+    parser.add_argument('--output_val_npy', action='store_true',
+                        help='Output validation prediction for vis_prediction.py (temp argument)')
     
     args = parser.parse_args()
     main(vars(args)) # pass args as dictionary
